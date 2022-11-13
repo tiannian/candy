@@ -3,25 +3,12 @@ listen = ["0.0.0.0:8490"]
 enable_swagger_ui = false
 enable_item_list = true
 
-[linux0]
-enable = true
-script_file = "linux.ipxe"
-match_uuid = ["86a9f546-d31b-4ba2-9bbb-303b61bcf8d1"]
-match_ip = ["192.168.1.160"]
-match_mac = ["87:98:65:57:44:98"]
-match_serial = ["J9BT188"]
-match_uefi = true
-match_bios = true
-
-[linux1]
+[ipxe.linux1]
 enable = true
 script = """
 #!ipxe
   
 dhcp
 """
-
-[linux2]
-enable = false
-script_url = ""
+ip = "192.168.1.1"
 

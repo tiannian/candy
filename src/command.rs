@@ -16,6 +16,8 @@ pub struct Args {
 
 impl Args {
     pub async fn execute(&self) {
+        println!("Config file is: {}", self.config);
+
         match self.subcommand {
             Sub::Init => {}
             Sub::Start => {
@@ -30,6 +32,8 @@ impl Args {
 
 #[derive(Subcommand, Debug)]
 pub enum Sub {
+    /// Inital environment
     Init,
+    /// Start daemon
     Start,
 }
