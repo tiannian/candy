@@ -1,21 +1,55 @@
 use tokio::fs;
 
-use crate::config::{Config, IpxeConfig};
+use crate::{
+    config::{Config, IpxeConfig},
+    Result,
+};
 
 pub const EMPTY_IPXE: &'static str = "#!ipxe\n";
 
-pub async fn get_script(v: IpxeConfig) -> String {
+pub async fn get_script(v: IpxeConfig) -> Result<String> {
     if let Some(s) = v.script {
-        return s;
+        return Ok(s);
     }
 
-    if let Some(s) = v.script_file {
-        if let Ok(s) = fs::read_to_string(s).await {
-            return s;
+    if let Some(p) = v.script_file {
+        let s = fs::read_to_string(p).await?;
+
+        return Ok(s);
+    }
+
+    Ok(String::from(EMPTY_IPXE))
+}
+
+async fn ipxe_script_inner(
+    config: &str,
+    uuid: &Option<String>,
+    ip: &Option<String>,
+    mac: &Option<String>,
+    serial: &Option<String>,
+    platform: &Option<String>,
+) -> Result<String> {
+    let s = fs::read_to_string(config).await?;
+
+    let t: Config = toml::from_str(&s)?;
+
+    for (_, v) in t.ipxe {
+        if v.enable && uuid == &v.uuid && ip == &v.ip && mac == &v.mac && serial == &v.serial {
+            let uefi = Some(String::from("efi"));
+
+            if v.uefi.unwrap_or(false) && platform == &uefi {
+                return get_script(v).await;
+            }
+
+            let bios = Some(String::from("pcbios"));
+
+            if v.bios.unwrap_or(false) && platform == &bios {
+                return get_script(v).await;
+            }
         }
     }
 
-    String::from(EMPTY_IPXE)
+    Ok(String::from(EMPTY_IPXE))
 }
 
 pub async fn ipxe_script(
@@ -26,28 +60,11 @@ pub async fn ipxe_script(
     serial: &Option<String>,
     platform: &Option<String>,
 ) -> String {
-    if let Ok(s) = fs::read_to_string(config).await {
-        if let Ok(t) = toml::from_str::<Config>(&s) {
-                println!("{:?}", t);
-            for (_, v) in t.ipxe {
-                println!("{:?}", v);
-
-                if v.enable && uuid == &v.uuid && ip == &v.ip && mac == &v.mac && serial == &v.serial {
-                    let uefi = Some(String::from("efi"));
-
-                    if v.uefi.unwrap_or(false) && platform == &uefi {
-                        return get_script(v).await;
-                    }
-
-                    let bios = Some(String::from("pcbios"));
-
-                    if v.bios.unwrap_or(false) && platform == &bios {
-                        return get_script(v).await;
-                    }
-                }
-            }
+    match ipxe_script_inner(config, uuid, ip, mac, serial, platform).await {
+        Ok(s) => s,
+        Err(e) => {
+            log::error!("ipxe match error: {:?}", e);
+            String::from(EMPTY_IPXE)
         }
     }
-
-    String::from(EMPTY_IPXE)
 }

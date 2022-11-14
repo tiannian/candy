@@ -17,10 +17,16 @@ pub struct IpxeConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Config {
+pub struct CommonConfig {
     pub listen: Vec<String>,
     pub enable_swagger_ui: bool,
     pub enable_item_list: bool,
+
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Config {
+    pub config: CommonConfig,
 
     pub ipxe: HashMap<String, IpxeConfig>,
 }

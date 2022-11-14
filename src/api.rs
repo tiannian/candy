@@ -18,9 +18,9 @@ impl Api {
         serial: Query<Option<String>>,
         platform: Query<Option<String>>,
     ) -> PlainText<String> {
-        let s = ipxe_script(&self.config, &uuid, &ip, &mac, &serial, &platform).await;
+        let r = ipxe_script(&self.config, &uuid, &ip, &mac, &serial, &platform).await;
 
-        PlainText(s)
+        PlainText(r)
     }
 }
 
